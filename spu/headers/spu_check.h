@@ -1,6 +1,7 @@
 #ifndef SPU_CHECK_H
 #define SPU_CHECK_H
-#include "my_stack.h"
+
+#include "spu_struct.h"
 
 #ifndef DEBUG
 #define DEBUG
@@ -15,7 +16,7 @@
 
 
 enum SPU_ERROR_FLAG{
-    NO_ERROR=0, 
+    NO_SPU_ERROR=0, 
     NEGATIVE_SIZE_CODE=1 ,
     NEGATIVE_SIZE_REGISTERS=1<<1, 
     NEGATIVE_IP=1<<2,
@@ -26,36 +27,20 @@ enum SPU_ERROR_FLAG{
 
 
 
-struct SPU_STRUCT
-{
-    ELEMENT_TYPE *code;
-    unsigned size_code;
-    int ip;
-    ELEMENT_TYPE *registers;
-    unsigned size_registers;
-    STACK stk;
 
-    ON_DEBUG
-    (
-        unsigned errors;
-        const char* name;
-        const char* file;
-        const char* func;
-        int line;
-    )
 
-};
-typedef SPU_STRUCT SPU_t;
+
 
 
 void Do_SPU_Dump(SPU_t* spu_ptr, const char* file, const int line, const char* func);
 #define SPU_Dump(spu) Do_SPU_Dump(spu, __FILE__, __LINE__, __FUNCTION__)
 
+void SPU_Printf_Errors(int problem);
 
 #ifdef DEBUG
     unsigned SPU_Error(SPU_t* spu_ptr);
     int Do_SPU_Assert(SPU_t *spu_ptr, const char* file, const int line, const char* func);
-    #define SPU_Assert(spu) Do_SPU_Assert(spu, __FILE__, __LINE__, __FUNCTION__)
+    #define SPU_Assert(spu_ptr) Do_SPU_Assert(spu_ptr, __FILE__, __LINE__, __FUNCTION__)
 #endif
 
 #endif

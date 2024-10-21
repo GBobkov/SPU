@@ -12,49 +12,33 @@
 RUNNER_ERROR Run(int code[], size_t size)
 {
     SPU_t spu = {};
-
+    SPU_Init(spu);
+    
     bool running = true;
     while (running)
     {
+        if (spu.ip >= spu.size_code) break;
+        
         switch (code[spu.ip])
         {
 
-            case (PUSH):
-                {
+
+            case PUSH:
                     Stack_Push(spu.stk, spu.code[spu.ip + 1]);
                     spu.ip += 2;
                     break;
-                }
 
-            case (PUSHR):
-                {
-                    Stack_Push(spu.stk, spu.registers[spu.code[spu.ip + 1]]);
-                    spu.ip += 2;
-                    break;
-                }
-
-            case (POP):
-                {
+            case POP:
                     Stack_Pop(spu.stk);
                     spu.ip += 1;
                     break;
-                }
 
-            case (POPR):
-                {
-                    spu.registers[spu.code[spu.ip + 1]] = Stack_Pop(spu.stk);
-                    spu.ip += 2;
-                    break;
-                }
-
-            case (ADD):
-                {
+            case ADD:
                     Stack_Push(spu.stk, Stack_Pop(spu.stk) + Stack_Pop(spu.stk));
                     spu.ip += 1;
                     break;
-                }
 
-            case (SUB):
+            case SUB:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -62,14 +46,12 @@ RUNNER_ERROR Run(int code[], size_t size)
                     spu.ip += 1;
                     break;
                 }
-            case (MUL):
-                {
+            case MUL:
                     Stack_Push(spu.stk, Stack_Pop(spu.stk) * Stack_Pop(spu.stk));
                     spu.ip += 1;
                     break;
-                }
 
-            case (DIV):
+            case DIV:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -84,7 +66,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                     break;
                 }
 
-            case (OUT):
+            case OUT:
                 {
                     ELEMENT_TYPE top = Stack_Pop(spu.stk);
                     printf("%d\n", top);
@@ -93,19 +75,18 @@ RUNNER_ERROR Run(int code[], size_t size)
                     break;
                 }
 
-            case (IN):
+            case IN:
                 {
                     ELEMENT_TYPE new_element = 0;
                     scanf("%d", &new_element);
                     Stack_Push(spu.stk, new_element);
                     break;
                 }
-            case (DUMP):
-               { 
+            case DUMP:
                     SPU_Dump(&spu);
                     break;
-                }
-            case (JA):
+
+            case JA:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -113,7 +94,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break;
                 }
-            case (JAE):
+            case JAE:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -121,7 +102,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break;
                 }
-            case (JB):
+            case JB:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -129,7 +110,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break; 
                 }
-            case (JBE):
+            case JBE:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -137,7 +118,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break;
                 }
-            case (JE):
+            case JE:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -145,7 +126,7 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break;
                 }
-            case (JNE):
+            case JNE:
                 {
                     ELEMENT_TYPE second = Stack_Pop(spu.stk);
                     ELEMENT_TYPE first = Stack_Pop(spu.stk);
@@ -153,26 +134,23 @@ RUNNER_ERROR Run(int code[], size_t size)
                         spu.ip = spu.code[spu.ip + 1];
                     break;
                 }
-            case (JMP):
-                {
+            case JMP:
                     spu.ip = spu.code[spu.ip + 1];
                     break;
-                }
-            case (-1):
-                {
+            
+            case HLT:
                     SPU_Destroy(spu);
                     break;
-                }
+        
             default:
-                {
-                    printf(ANSI_RED "UNKNOWN CMD=%d in %s:%d(%s)" ANSI_RESET_COLOR, spu.code[spu.ip], __FILE__, __LINE__, __FUNCTION__);
+                    printf(ANSI_RED "UNKNOWN COMMAND_CODE=%d in %s:%d(%s)" ANSI_RESET_COLOR, spu.code[spu.ip], __FILE__, __LINE__, __FUNCTION__);
                     abort();
                     break;
-                }
+    
         }
     }
 
-    return NO_ERR;
+    return NO_RUNNER_ERROR;
     
 }
 
