@@ -1,0 +1,3 @@
+[submodule "my_stack"]
+	path = my_stack
+	url = https://github.com/GBobkov/my_stack
