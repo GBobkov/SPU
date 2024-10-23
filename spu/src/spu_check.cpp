@@ -24,7 +24,7 @@ void Do_SPU_Dump(SPU_t* spu_ptr, const char* file, const int line, const char* f
     printf(ANSI_YELLOW "code[%p]:" ANSI_RESET_COLOR, spu_ptr->code);
     if (!spu_ptr->code)
     {
-        printf(ANSI_RED "Can't print data containing: NULL_CODE_PTR" ANSI_RESET_COLOR);
+        printf(ANSI_RED "Can't print code containing: NULL_CODE_PTR" ANSI_RESET_COLOR);
         printf(END_LINE);
     }
     else
@@ -39,60 +39,16 @@ void Do_SPU_Dump(SPU_t* spu_ptr, const char* file, const int line, const char* f
     }
 
     printf(ANSI_YELLOW "registers[%p]:" ANSI_RESET_COLOR, spu_ptr->registers);
-    if (!spu_ptr->registers)
-    {
-        printf(ANSI_RED "Can't print data containing: NULL_CODE_PTR" ANSI_RESET_COLOR);
-        printf(END_LINE);
-    }
-    else
-    {
+    
         for (int i = 0; i < (int)spu_ptr->size_code ; i++)
-        {
-            printf(ANSI_GREEN "*[%d]=%d" ANSI_RESET_COLOR, i, spu_ptr->code[i]);
-            
-        }
+            printf(ANSI_GREEN "*[%d]=%d" ANSI_RESET_COLOR, i, spu_ptr->code[i]);      
         
         if (!spu_ptr->code) printf(ANSI_RED "Code is empty." ANSI_RESET_COLOR);
-    }
 
     printf(END_LINE);
 
 }
 
-
-#ifdef DEBUG
-
-void SPU_Printf_Errors(int problem);
-
-unsigned SPU_Error(SPU_t* spu_ptr)
-{
-    unsigned errors = 0;
-    if (!spu_ptr) return NULL_SPU_PTR;
-    if (spu_ptr->ip <= 0) errors |= NEGATIVE_IP;
-    if (spu_ptr->size_code <= 0) errors |= NEGATIVE_SIZE_CODE;
-    if (spu_ptr->size_registers <= 0) errors |= NEGATIVE_SIZE_REGISTERS;
-    if (!spu_ptr->code) errors |= NULL_CODE_PTR;
-    if (!spu_ptr->registers) errors |= NULL_REGISTERS_PTR;
-    
-    spu_ptr->errors = errors;
-    return errors;
-}
-
-int Do_SPU_Assert(SPU_t *spu_ptr, const char* file, const int line, const char* func)
-{
-    int i = 0;
-    if (!spu_ptr)
-    {
-        printf("NULL_spu_ptr_PTR in %s:%d(%s)", file, line, func);
-        return NULL_SPU_PTR; 
-    }
-    if (SPU_Error(spu_ptr))
-    {   
-        SPU_Dump(spu_ptr);
-        return spu_ptr->errors;
-    }
-    return NO_ERROR;
-}
 
 void SPU_Printf_Errors(int problem)
 {
@@ -110,10 +66,42 @@ void SPU_Printf_Errors(int problem)
     if (problem & NEGATIVE_IP) printf("\n\tNEGATIVE_IP");
     if (problem & NULL_SPU_PTR) printf("\n\tNULL_SPU_PTR");
     if (problem & NULL_CODE_PTR) printf("\n\tNULL_CODE_PTR");
-    if (problem & NULL_REGISTERS_PTR) printf("\n\tNULL_REGISTERS_PTR");
     
     printf(ANSI_RESET_COLOR);
 
+}
+
+
+
+
+#ifdef DEBUG
+
+unsigned SPU_Error(SPU_t* spu_ptr)
+{
+    unsigned errors = 0;
+    if (!spu_ptr) return NULL_SPU_PTR;
+    if (spu_ptr->ip <= 0) errors |= NEGATIVE_IP;
+    if (spu_ptr->size_code <= 0) errors |= NEGATIVE_SIZE_CODE;
+    if (spu_ptr->size_registers <= 0) errors |= NEGATIVE_SIZE_REGISTERS;
+    if (!spu_ptr->code) errors |= NULL_CODE_PTR;
+    
+    spu_ptr->errors = errors;
+    return errors;
+}
+
+int Do_SPU_Assert(SPU_t *spu_ptr, const char* file, const int line, const char* func)
+{
+    if (!spu_ptr)
+    {
+        printf("NULL_spu_ptr_PTR in %s:%d(%s)", file, line, func);
+        return NULL_SPU_PTR; 
+    }
+    if (SPU_Error(spu_ptr))
+    {   
+        SPU_Dump(spu_ptr);
+        return spu_ptr->errors;
+    }
+    return NO_ERROR;
 }
 
 #endif

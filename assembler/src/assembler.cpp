@@ -1,17 +1,23 @@
-#include "../../assembler/include/assembler.h"
-#include "spu/include/spu_check.h"
-#include "my_stack/include/colors.h"
+#include "assembler.h"
+#include "my_stack.h"
+#include "spu_struct.h"
+#include "spu_check.h"
+#include "colors.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+// ассемблер не должен знать структуру процессора.
 const char* input_name = "assembler.txt";
 
+// отдельный еррор нейминг __FILE__ LINEE вообще дебаг норм сделать
 
-
+#warning fix your spelling
 int Fill_Michine_Code_From_File(SPU_t *spu_ptr, const char *file_input);
 
+
+
+// new name of func write_instruction_arg
 void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr);
 void Write_Various_Pop_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr);
 
@@ -28,139 +34,76 @@ int Fill_Michine_Code_From_File(SPU_t *spu_ptr, const char *input_file_name)
 
     int cmd_code_value = -1;
 
-    if  (strcmp(cmd, "PUSH") == 0)           cmd_code_value = PUSH;
-    else if (strcmp(cmd, "POP") == 0)        cmd_code_value = POP;
-    else if (strcmp(cmd, "ADD") == 0)        cmd_code_value = ADD;
-    else if (strcmp(cmd, "SUB") == 0)        cmd_code_value = SUB;
-    else if (strcmp(cmd, "DIV") == 0)        cmd_code_value = DIV;
-    else if (strcmp(cmd, "MUL") == 0)        cmd_code_value = MUL;
-    else if (strcmp(cmd, "OUT") == 0)        cmd_code_value = OUT;
-    else if (strcmp(cmd, "IN") == 0)         cmd_code_value = IN;
-    else if (strcmp(cmd, "DUMP") == 0)       cmd_code_value = DUMP;
-    else if (strcmp(cmd, "JA") == 0)         cmd_code_value = JA;
-    else if (strcmp(cmd, "JAE") == 0)        cmd_code_value = JAE;
-    else if (strcmp(cmd, "JB") == 0)         cmd_code_value = JB;
-    else if (strcmp(cmd, "JBE") == 0)        cmd_code_value = JBE;
-    else if (strcmp(cmd, "JE") == 0)         cmd_code_value = JE;
-    else if (strcmp(cmd, "JNE") == 0)        cmd_code_value = JNE;
-    else if (strcmp(cmd, "JMP") == 0)        cmd_code_value = JMP;
-    else if (strcmp(cmd, "HLT") == 0)        cmd_code_value = HLT;
+
+    // codegen
+    if  (strcmp(cmd, "PUSH") == 0)           cmd_code_value = CMD_PUSH;   // чтение
+    else if (strcmp(cmd, "POP") == 0)        cmd_code_value = CMD_POP;     // запись
+    else if (strcmp(cmd, "ADD") == 0)        cmd_code_value = CMD_ADD;   
+    else if (strcmp(cmd, "SUB") == 0)        cmd_code_value = CMD_SUB;      // без аргументов
+    else if (strcmp(cmd, "DIV") == 0)        cmd_code_value = CMD_DIV;
+    else if (strcmp(cmd, "MUL") == 0)        cmd_code_value = CMD_MUL;
+    else if (strcmp(cmd, "OUT") == 0)        cmd_code_value = CMD_OUT;
+    else if (strcmp(cmd, "IN") == 0)         cmd_code_value = CMD_IN;
+    else if (strcmp(cmd, "DUMP") == 0)       cmd_code_value = CMD_DUMP;
+    else if (strcmp(cmd, "JA") == 0)         cmd_code_value = CMD_JA;
+    else if (strcmp(cmd, "JAE") == 0)        cmd_code_value = CMD_JAE;
+    else if (strcmp(cmd, "JB") == 0)         cmd_code_value = CMD_JB;
+    else if (strcmp(cmd, "JBE") == 0)        cmd_code_value = CMD_JBE;
+    else if (strcmp(cmd, "JE") == 0)         cmd_code_value = CMD_JE;
+    else if (strcmp(cmd, "JNE") == 0)        cmd_code_value = CMD_JNE;
+    else if (strcmp(cmd, "JMP") == 0)        cmd_code_value = CMD_JMP;
+    else if (strcmp(cmd, "HLT") == 0)        cmd_code_value = CMD_HLT;
     else
     {
         printf(ANSI_RED "UNSUPORTABLE COMAND!" ANSI_RESET_COLOR);
         abort();
     }
-
+    // spu_ptr->code[spu_ptr->size_code++] = cmd_code_value;  выноси
+    
+    // убрать swicth два бита значение команды.
     switch (cmd_code_value)
     {
-    case PUSH:
+
+    case CMD_JAE:
+    case CMD_JA:
+    case CMD_JBE:
+    case CMD_JB:
+    case CMD_JE:
+    case CMD_JNE:
+    case CMD_JMP:
+    case CMD_PUSH:
+        // cmd = ...
         Write_Various_Push_Situations_To_Code(spu_ptr, input_file_ptr);
+
+        /*if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }*/
         break;
 
-    case POP:
+    case CMD_POP:
+        // ...
         Write_Various_Pop_Situations_To_Code(spu_ptr, input_file_ptr);
         break;
 
-    case ADD:
-        spu_ptr->code[spu_ptr->size_code++] = ADD;
-        break;
-        
-    case SUB:
-        spu_ptr->code[spu_ptr->size_code++] = SUB;
+    default:
+        spu_ptr->code[spu_ptr->size_code++] = cmd_code_value;
         break;
     
-    case MUL:
-        spu_ptr->code[spu_ptr->size_code++] = MUL;
         break;
-    
-    case DIV:
-        spu_ptr->code[spu_ptr->size_code++] = DIV;
-        break;
-        
-    case OUT:
-        spu_ptr->code[spu_ptr->size_code++] = OUT;
-        break;
-        
-    case IN:
-        spu_ptr->code[spu_ptr->size_code++] = IN;
-        break;
-    
-    case JA:
-        spu_ptr->code[spu_ptr->size_code++] = JA;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-
-    case JAE:
-        spu_ptr->code[spu_ptr->size_code++] = JAE;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    case JB:
-        spu_ptr->code[spu_ptr->size_code++] = JB;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    case JBE:
-        spu_ptr->code[spu_ptr->size_code++] = JBE;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    case JE:
-        spu_ptr->code[spu_ptr->size_code++] = JE;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    
-    case JNE:
-        spu_ptr->code[spu_ptr->size_code++] = JNE;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    case JMP:
-        spu_ptr->code[spu_ptr->size_code++] = JMP;
-        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-        {
-            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-            abort();
-        }
-        break;
-    
-    case HLT:
-        spu_ptr->code[spu_ptr->size_code++] = HLT;
-        break;
-    
+    /*
     default:
         printf(ANSI_RED "UNSUPORTABLE COMAND!" ANSI_RESET_COLOR);
         abort();
-        break;
+        break;*/
     }
+
+    return 0;
 }
 
 
+// push не делает ничего с cmd на базе write 
 
 void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
 {
@@ -175,19 +118,23 @@ void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
         } 
     if (true)
     {
-        char register_name[16] = {};
+        char* register_name = (char *) calloc(16, sizeof(char));
+
         ELEMENT_TYPE element_value = 0;
+        #warning existence of [ means nothing but existence of bit flag in the result
+        // отдельнеы биты для наличия числа и регистра. переменные для регистра и числа. далее if (flag && 001) code[ip++] = ......;
+        
         if (sscanf(push_args, "[%d]", &element_value) == 1)
         {
             spu_ptr->code[spu_ptr->size_code++] = ONLY_ELEMENT_PUSH_TO_RAM;
             spu_ptr->code[spu_ptr->size_code++] = element_value;
         }
-        else if (sscanf(push_args, "[%s]", &register_name) == 1) 
+        else if (sscanf(push_args, "[%s]", register_name) == 1) 
         {
             spu_ptr->code[spu_ptr->size_code++] = ONLY_REGISTER_PUSH_TO_RAM;
             spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
         }
-        else if (sscanf(push_args, "[%s + %d]", &register_name, &element_value) == 2) 
+        else if (sscanf(push_args, "[%s + %d]", register_name, &element_value) == 2) 
             {
                 spu_ptr->code[spu_ptr->size_code++] = REGISTER_AND_ELEMENT_PUSH_TO_RAM;
                 spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
@@ -198,12 +145,12 @@ void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
             spu_ptr->code[spu_ptr->size_code++] = ONLY_ELEMENT_PUSH_TO_SPU_STACK;
             spu_ptr->code[spu_ptr->size_code++] = element_value;
         }
-        else if (sscanf(push_args, "%s", &register_name) == 1) 
+        else if (sscanf(push_args, "%s", register_name) == 1) 
         {
             spu_ptr->code[spu_ptr->size_code++] = ONLY_REGISTER_PUSH_TO_SPU_STACK;
             spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
         }
-        else if (sscanf(push_args, "%s + %d", &register_name, &element_value) == 2) 
+        else if (sscanf(push_args, "%s + %d", register_name, &element_value) == 2) 
             {
                 spu_ptr->code[spu_ptr->size_code++] = REGISTER_AND_ELEMENT_PUSH_TO_SPU_STACK;
                 spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
@@ -211,14 +158,18 @@ void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
             }
         else
         {
-            printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, push_args, __FILE__, __LINE__, __FUNCTION__);
             abort();
         }
+
+        free(register_name);
     }
 
 }
 
 
+// то же самое что push, за исключение POP num. Т.о. нужно сделать общие флаги для push и pop
+// вызов push, затем проверка code на корректность 
 void Write_Various_Pop_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
 {
     ON_DEBUG(assert(input_file_ptr); SPU_Assert(spu_ptr);)
@@ -230,42 +181,50 @@ void Write_Various_Pop_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
             abort();
         } 
     
-    char register_name[16] = {};
+    char* register_name = (char *) calloc(16, sizeof(char));
+    
     ELEMENT_TYPE element_value = 0;
     if (sscanf(pop_args, "[%d]", &element_value) == 1)
     {
         spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_PUSH_TO_RAM;
         spu_ptr->code[spu_ptr->size_code++] = element_value;
     }    
-    else if (sscanf(pop_args, "[%s + %d]", &register_name, &element_value) == 2) 
+    else if (sscanf(pop_args, "[%s + %d]", register_name, &element_value) == 2) 
         {
             spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_ADD_TO_REGISTER_PUSH_TO_RAM;
             spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
             spu_ptr->code[spu_ptr->size_code++] = element_value;
         }
-    else if (sscanf(pop_args, "%s", &register_name) == 1) 
+    else if (sscanf(pop_args, "%s", register_name) == 1) 
     {
         spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_PUSH_TO_REGISTERS;
         spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
+        #warning kakogo cherta
     }
     else
     {
-        printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+        printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, pop_args, __FILE__, __LINE__, __FUNCTION__);
         abort();
     }
+
+    free(register_name);
 
 }
 
 
-
+// возможно стоит это запихать в структуру
+// но это сложно инициализировать
+// но можно запихать в макрос
+// и это лучше чем пихать в макрос параметры
 
 REGISTERS_CODES Find_Code_of_Register_By_Name(const char* register_name, const char* file_name, int line, const char* function_name)
 {
-    if (strcmp(register_name, "AX") == 0) return AX;
-    if (strcmp(register_name, "BX") == 0) return BX;
-    if (strcmp(register_name, "CX") == 0) return CX;
-    if (strcmp(register_name, "DX") == 0) return DX;
-    if (strcmp(register_name, "EX") == 0) return EX;
+    // вернуть разность первой буквы и 'A'
+    if (strcmp(register_name, "AX") == 0) return REGISTER_NAME_AX; 
+    if (strcmp(register_name, "BX") == 0) return REGISTER_NAME_BX;
+    if (strcmp(register_name, "CX") == 0) return REGISTER_NAME_CX;
+    if (strcmp(register_name, "DX") == 0) return REGISTER_NAME_DX;
+    if (strcmp(register_name, "EX") == 0) return REGISTER_NAME_EX;
 
     
     printf(ANSI_RED "UNDEFINED_REGISTER_NAME=\"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, register_name, file_name, line, function_name);

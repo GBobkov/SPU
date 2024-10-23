@@ -23,27 +23,27 @@ struct SPU_STRUCT
 
 };
 
-typedef SPU_STRUCT SPU_t;
+typedef struct SPU_STRUCT SPU_t;
 
 enum COMANDS
 {
-    PUSH=1,
-    POP=2,
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    OUT,
-    IN,
-    DUMP,
-    JA,
-    JAE,
-    JB,
-    JBE,
-    JE,
-    JNE,
-    JMP,
-    HLT=-1
+    CMD_PUSH=1,
+    CMD_POP=2,
+    CMD_ADD,
+    CMD_SUB,
+    CMD_MUL,
+    CMD_DIV,
+    CMD_OUT,
+    CMD_IN,
+    CMD_DUMP,
+    CMD_JA,
+    CMD_JAE,
+    CMD_JB,
+    CMD_JBE,
+    CMD_JE,
+    CMD_JNE,
+    CMD_JMP,
+    CMD_HLT=-1
 };
 
 enum VARIOUS_PUSH_FLAG
@@ -66,11 +66,11 @@ enum VARIOUS_POP_FLAG
 enum REGISTERS_CODES
 {
     UNDEFINED_REGISTER_CODE=-1,
-    AX=0,
-    BX,
-    CX,
-    DX,
-    EX
+    REGISTER_NAME_AX=0,
+    REGISTER_NAME_BX,
+    REGISTER_NAME_CX,
+    REGISTER_NAME_DX,
+    REGISTER_NAME_EX
 };
 
 #endif

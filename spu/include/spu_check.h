@@ -22,7 +22,6 @@ enum SPU_ERROR_FLAG{
     NEGATIVE_IP=1<<2,
     NULL_SPU_PTR=1<<3,
     NULL_CODE_PTR=1<<4,
-    NULL_REGISTERS_PTR=1<<5,
 };
 
 
