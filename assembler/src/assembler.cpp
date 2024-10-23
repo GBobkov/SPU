@@ -1,7 +1,7 @@
-#include "assembler.h"
-#include "spu_check.h"
-#include "colors.h"
-#include "assert.h"
+#include "../../assembler/include/assembler.h"
+#include "spu/include/spu_check.h"
+#include "my_stack/include/colors.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -87,38 +87,66 @@ int Fill_Michine_Code_From_File(SPU_t *spu_ptr, const char *input_file_name)
     
     case JA:
         spu_ptr->code[spu_ptr->size_code++] = JA;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
 
     case JAE:
         spu_ptr->code[spu_ptr->size_code++] = JAE;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     case JB:
         spu_ptr->code[spu_ptr->size_code++] = JB;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     case JBE:
         spu_ptr->code[spu_ptr->size_code++] = JBE;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     case JE:
         spu_ptr->code[spu_ptr->size_code++] = JE;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     
     case JNE:
         spu_ptr->code[spu_ptr->size_code++] = JNE;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     case JMP:
         spu_ptr->code[spu_ptr->size_code++] = JMP;
-        fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]);
+        if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
+        {
+            printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        }
         break;
     
     case HLT:
@@ -193,6 +221,38 @@ void Write_Various_Push_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
 
 void Write_Various_Pop_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr)
 {
+    ON_DEBUG(assert(input_file_ptr); SPU_Assert(spu_ptr);)
+
+    char pop_args[64] = {};
+        if (fscanf(input_file_ptr, "%s", pop_args) <= 0)
+        {
+            printf(ANSI_RED "READING ERROR at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+            abort();
+        } 
+    
+    char register_name[16] = {};
+    ELEMENT_TYPE element_value = 0;
+    if (sscanf(pop_args, "[%d]", &element_value) == 1)
+    {
+        spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_PUSH_TO_RAM;
+        spu_ptr->code[spu_ptr->size_code++] = element_value;
+    }    
+    else if (sscanf(pop_args, "[%s + %d]", &register_name, &element_value) == 2) 
+        {
+            spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_ADD_TO_REGISTER_PUSH_TO_RAM;
+            spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
+            spu_ptr->code[spu_ptr->size_code++] = element_value;
+        }
+    else if (sscanf(pop_args, "%s", &register_name) == 1) 
+    {
+        spu_ptr->code[spu_ptr->size_code++] = POP_ELEMENT_PUSH_TO_REGISTERS;
+        spu_ptr->code[spu_ptr->size_code++] = Find_Code_of_Register_By_Name(register_name, __FILE__, __LINE__, __FUNCTION__);
+    }
+    else
+    {
+        printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
+        abort();
+    }
 
 }
 
