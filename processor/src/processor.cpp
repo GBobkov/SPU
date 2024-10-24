@@ -1,34 +1,30 @@
 #include "processor.h"
 
+#include "enum.h"
 #include "spu.h"
 #include "colors.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 
-// code struct like stack для того чтобы менять память т.к. code - int*
+// code struct like stack для того чтобы менять память т.к. code - int* и code постоянно увеличивается
 
 
 RUNNER_ERROR Run(int code[], size_t size)
 {
-
-    #define (comand) \
-    if (comand == CMD_PUSH) code("==")
 
 
     SPU_t spu = {};
     SPU_Init(spu);
     
     bool running = true;
-    // first second общее для всех
+    // first second общее для всех => вынести и сделать общую инициализацию.
     while (running)
     {
         if (spu.ip >= spu.size_code) break;
         
         switch (code[spu.ip])
         {
-
-
             case CMD_PUSH:
             // spu.code[spu.ip + 1] вынести в локальну переменную в зависимости от бита
             // spu.ip + 1  -    общий для всех можно сделать до switch
