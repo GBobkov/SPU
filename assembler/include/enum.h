@@ -17,7 +17,7 @@ enum COMANDS
     CMD_OUT = 0b1010, 
     CMD_IN  = 0b1100,
     CMD_DUMP= 0b1110,
-    CMD_JA  = 0b10001, 
+    CMD_JA  = 0b10001, // 5 бит=1, если это команда типа jump
     CMD_JAE = 0b10011,
     CMD_JB  = 0b10101,
     CMD_JBE = 0b10111,

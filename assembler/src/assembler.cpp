@@ -12,37 +12,44 @@
     else
 
 
-const char* input_name = "assembler.txt";
-
-int Read_File_and_Fill_Machine_Code(const char *output_file_name, const char *input_file_name);
-
-
-
-
-
-
-int Check_The_Correctness_of_Pop_Args(int information_bits);
+int Read_File_and_Fill_Machine_Code(const char *input_file_name, const char *output_file_name);
 
 
 
 
 
 // функция проверяет нет ли ситуации POP num
+int Check_The_Correctness_of_Pop_Args(int information_bits);
 int Check_The_Correctness_of_Pop_Args(int information_bits)
 {
     return information_bits; // in development
 }
 
 
-// new name of func write_instruction_arg т.к. другой смысл у Write_Various_Push_Situations_To_Code
+// функция обрабатывает строку аргументов и переводит всё в машинный код 
 int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const char *input_file_name, int curant_file_line);
-//void Write_Various_Pop_Situations_To_Code(SPU_t* spu_ptr, FILE* input_file_ptr);
 
+//возведение в степень
+int pow(int x, int y); 
 
+// перевести строку в число (atoi) 
+int String_to_Int(STACK stk, int len_of_num);
 
+// функция переводит число в двоичный вид в строке 
+char *Int_to_Bin(int a, char* buffer, int buf_size);
 
-int pow(int x, int y);
-int Calculate_Num_By_Stack(STACK stk, int len_of_num);
+char *Int_to_Bin(int a, char* buffer, int buf_size)
+{
+    buffer += (buf_size - 1);
+    
+    for (int i = 31; i >= 0; i--) {
+        *buffer-- = (a & 1) + '0';
+
+        a >>= 1;
+    }
+
+    return buffer;
+}
 
 
 int Check_The_Correctness_of_Register_Name(const char *first_sym_ptr);
@@ -71,100 +78,70 @@ int Check_The_Correctness_of_Brackets(const char *arg_str)
     return arg_str[0] -'0';
 }
 
-int Read_File_and_Fill_Machine_Code(const char *output_file_name, const char *input_file_name)
+int Read_File_and_Fill_Machine_Code(const char *input_file_name, const char *output_file_name)
 {
 
     FILE *input_file_ptr = fopen(input_file_name, "r");
-    FILE *output_file_ptr = fopen(output_file_name, "r");
+    FILE *output_file_ptr = fopen(output_file_name, "w");
 
     assert(input_file_ptr);
     assert(output_file_ptr);
 
     int line = 0;
-
     char cmd[50] = {};
-    if (fscanf(input_file_ptr, "%s", cmd) <= 0) return 1;
 
-    int cmd_code_value = 0;
-    
-
-    INIT_COMMAND(PUSH)
-    INIT_COMMAND(POP)
-    INIT_COMMAND(ADD)
-    INIT_COMMAND(SUB)
-    INIT_COMMAND(MUL)
-    INIT_COMMAND(DIV)
-    INIT_COMMAND(OUT)
-    INIT_COMMAND(IN)
-    INIT_COMMAND(DUMP)
-    INIT_COMMAND(JA)
-    INIT_COMMAND(JAE)
-    INIT_COMMAND(JB)
-    INIT_COMMAND(JBE)
-    INIT_COMMAND(JE)
-    INIT_COMMAND(JNE)
-    INIT_COMMAND(JMP)
-    INIT_COMMAND(HLT)
-    /*else*/
+    while((fscanf(input_file_ptr, "%s", cmd)  == 1))
     {
-        printf(ANSI_RED "UNSUPORTABLE COMAND!" ANSI_RESET_COLOR);
-        abort();
+        line++;
+        int cmd_code_value = 0;
+        
+
+        INIT_COMMAND(PUSH)
+        INIT_COMMAND(POP)
+        INIT_COMMAND(ADD)
+        INIT_COMMAND(SUB)
+        INIT_COMMAND(MUL)
+        INIT_COMMAND(DIV)
+        INIT_COMMAND(OUT)
+        INIT_COMMAND(IN)
+        INIT_COMMAND(DUMP)
+        INIT_COMMAND(JA)
+        INIT_COMMAND(JAE)
+        INIT_COMMAND(JB)
+        INIT_COMMAND(JBE)
+        INIT_COMMAND(JE)
+        INIT_COMMAND(JNE)
+        INIT_COMMAND(JMP)
+        INIT_COMMAND(HLT)
+        /*else*/
+        {
+            printf(ANSI_RED "UNSUPORTABLE COMAND!" ANSI_RESET_COLOR);
+            exit(1);
+        }
+
+        
+        fprintf(output_file_ptr, "%d\n", cmd_code_value);  // код команды
+
+        if (cmd_code_value & 1)  // если комманда принимает аргументы, то нужно записать в машинный код её параметры
+        {
+            int information_bits = Write_Instruction_Arg(input_file_ptr, output_file_ptr, input_file_name, line);
+            // first lowest bit = 1 if there is num, else 0
+            // second lowest bit = 1 if there is register else 0
+            // third bit = 1 if work with RAM, 0 if work with spu stack
+
+
+            if (cmd_code_value & 0b10)   // может быть ситуация POP num, остальные ситуации для pop и push корректны
+                Check_The_Correctness_of_Pop_Args(information_bits);
+
+            //стоит также отметить, что jump команды принимают любой набор аргументов.
+        } 
     }
-
-   
     
-    
-    fprintf(output_file_ptr, "%d ", cmd_code_value);
-
-    if (cmd_code_value & 1)  // если комманда принимает аргументы
+    if (line == 0)
     {
-        int information_bits = Write_Instruction_Arg(input_file_ptr, output_file_ptr, input_file_name, line);
-        // first lowest bit = 1 if there is num, else 0
-        // second lowest bit = 1 if there is register else 0
-        // third bit = 1 if work with RAM, 0 if work with spu stack
-        if (cmd_code_value & 0b10)   // может быть ситуация POP num, остальные ситуации для pop и push корректны
-            Check_The_Correctness_of_Pop_Args(information_bits);
-    } 
-    
-    // // убрать swicth два бита значение команды.
-    // switch (cmd_code_value)
-    // {
-
-    // case CMD_JAE:
-    // case CMD_JA:
-    // case CMD_JBE:
-    // case CMD_JB:
-    // case CMD_JE:
-    // case CMD_JNE:
-    // case CMD_JMP:
-    // case CMD_PUSH:
-    //     // cmd = ...
-    //     Write_Various_Push_Situations_To_Code(spu_ptr, input_file_ptr);
-
-    //     /*if (fscanf(input_file_ptr, "%d", &spu_ptr->code[spu_ptr->size_code++]) < 1)
-    //     {
-    //         printf(ANSI_RED "ERROR IN READING at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-    //         abort();
-    //     }*/
-    //     break;
-
-    // case CMD_POP:
-    //     // ...
-    //     Write_Various_Pop_Situations_To_Code(spu_ptr, input_file_ptr);
-    //     break;
-
-    // default:
-    //     spu_ptr->code[spu_ptr->size_code++] = cmd_code_value;
-    //     break;
-    
-    //     break;
-    // /*
-    // default:
-    //     printf(ANSI_RED "UNSUPORTABLE COMAND!" ANSI_RESET_COLOR);
-    //     abort();
-    //     break;*/
-    // }
-
+        printf(ANSI_RED "\"%s\" is empty." ANSI_RESET_COLOR, input_file_name);
+        return 1;        
+    }
     return 0;
 }
 
@@ -174,7 +151,7 @@ int pow(int x, int y)
     return x * pow(x, y - 1);
 }
 
-int Calculate_Num_By_Stack(STACK stk, int len_of_num)
+int String_to_Int(STACK stk, int len_of_num)
 {
     int num = 0;
     int ten_degree = 0;
@@ -188,7 +165,7 @@ int Calculate_Num_By_Stack(STACK stk, int len_of_num)
 }
 
 
-// push не делает ничего с cmd на базе write 
+// функция проверяет строку аргументов и переводит всё в машинный код
 int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const char *input_file_name, int curant_file_line)
 {
 
@@ -199,12 +176,16 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
     if (fscanf(input_file_ptr, "%s", args_str) <= 0)
     {
         printf(ANSI_RED "READING ERROR at %s:%d" ANSI_RESET_COLOR,input_file_name, curant_file_line);
-        abort();
+        exit(1);
     } 
 
 
 
     unsigned information_about_arg_str = 0;
+    // младший бит отвечает за наличие числа
+    // второй бит отвечает за наличие регистра
+    // третий бит отвечает за наличие открывающей скобки
+    // четвёртый бит отвечает за наличие закрывающей скобки
 
     int num_arg = 0;
     int reg_arg = 0;
@@ -213,30 +194,33 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
     while (args_str[symbol_index++] != '\0')
     {
         if (args_str[symbol_index] == '[')             
-            information_about_arg_str |= 0b100;
+            information_about_arg_str |= 0b0100;
         else if (args_str[symbol_index] == ']')
             information_about_arg_str |= 0b1000;
         else if (args_str[symbol_index] <= 'Z' && args_str[symbol_index] >= 'A')
         {
-            information_about_arg_str |= 0b10;
+            information_about_arg_str |= 0b0010;
             Check_The_Correctness_of_Register_Name(&args_str[symbol_index]);
             reg_arg = Find_Code_of_Register_By_Name(&args_str[symbol_index]);
             symbol_index++;  // т.к. след символ 'X', его нужно пропустить.
         }
         else if (args_str[symbol_index] <= '9' && args_str[symbol_index] >= '0')
         {
-            information_about_arg_str |= 0b1;
+            information_about_arg_str |= 0b0001;
 
             STACK stk_num = {};
             Stack_Init(stk_num, 16);
             int len_of_num = 0;
+            // разбираем число в обратном порядке, чтобы затем его преобразовать
             while (args_str[symbol_index] <= '9' && args_str[symbol_index] >= '0')
             {
-                Stack_Push(stk_num, args_str[symbol_index] - '0');    // разбираем число в обратном порядке, чтобы затем его преобразовать
+                Stack_Push(stk_num, args_str[symbol_index] - '0');
                 symbol_index++;
                 len_of_num++;
             }
-            num_arg = Calculate_Num_By_Stack(stk_num, len_of_num);
+            num_arg = String_to_Int(stk_num, len_of_num);
+            Stack_Destroy(stk_num);
+            
         }
         else if (args_str[symbol_index] == ' ' || args_str[symbol_index] == '+')
         {
@@ -244,14 +228,15 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
         }
         else
         {
-            printf("Unpredictable command: cmd=%s\n", args_str);
-            abort();
+            printf("Unpredictable command: file_name=%s, line=%d\ncmd=%s\n", input_file_name, curant_file_line, args_str);
+            exit(1);
         }
     }
-    if ((information_about_arg_str & 1) ^ (information_about_arg_str ^ 0b10))
+    if ((information_about_arg_str & 0b1000) ^ (information_about_arg_str & 0b0100))
     {
-        printf("Problem with brackets in command. cmd=%s\n", args_str);
-        abort();
+        printf(ANSI_RED "Problem with brackets in command.cmd=%s" ANSI_RESET_COLOR, args_str);
+        printf("information_about_arg_str=%d", information_about_arg_str);
+        exit(1);
     }
 
 
@@ -263,18 +248,29 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 
     information_bits |= information_about_arg_str & 0b111;
 
+    // то же что и снизу только короче
     /*if (information_about_arg_str & 0b100) information_bits |= 0b100;
     if (information_about_arg_str & 0b10) information_bits |= 0b10;
     if (information_about_arg_str & 0b1) information_bits |= 0b1;*/
            
-    fprintf(output_file_ptr, "%d ", information_bits);
-    fprintf(output_file_ptr, "%d ", information_bits);
-    if (information_bits & 0b10) fprintf(output_file_ptr, "%d ", reg_arg);
-    if (information_bits & 0b01) fprintf(output_file_ptr, "%d ", num_arg);
+    fprintf(output_file_ptr, "%d\n", information_bits); //   записываем в машинный код информацию об аргументах (1-ый бит - есть ли чисто)
+    if (information_bits & 0b10) fprintf(output_file_ptr, "%d\n", reg_arg);                              //  2-ой бит - есть ли регистр
+    if (information_bits & 0b01) fprintf(output_file_ptr, "%d\n", num_arg);                              // 3-ий бит - есть ли обращение к ram
     
-
     return information_bits;
 }
+
+
+
+int Assembler(const char *input_file_name, const char *output_file_name)
+{
+    Read_File_and_Fill_Machine_Code(input_file_name, output_file_name);
+
+    return 0;
+}
+
+
+
 
 
 
@@ -291,7 +287,7 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 //         if (fscanf(input_file_ptr, "%s", push_args) <= 0)
 //         {
 //             printf(ANSI_RED "READING ERROR at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-//             abort();
+//             exit(1);
 //         } 
 //     if (true)
 //     {
@@ -336,7 +332,7 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 //         else
 //         {
 //             printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, push_args, __FILE__, __LINE__, __FUNCTION__);
-//             abort();
+//             exit(1);
 //         }
 
 //         free(register_name);
@@ -355,7 +351,7 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 //         if (fscanf(input_file_ptr, "%s", pop_args) <= 0)
 //         {
 //             printf(ANSI_RED "READING ERROR at %s:%d(%s)" ANSI_RESET_COLOR, __FILE__, __LINE__, __FUNCTION__);
-//             abort();
+//             exit(1);
 //         } 
     
 //     char* register_name = (char *) calloc(16, sizeof(char));
@@ -381,7 +377,7 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 //     else
 //     {
 //         printf(ANSI_RED "UNKNOWN COMAND \"%s\" at %s:%d(%s)" ANSI_RESET_COLOR, pop_args, __FILE__, __LINE__, __FUNCTION__);
-//         abort();
+//         exit(1);
 //     }
 
 //     free(register_name);
@@ -393,5 +389,3 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
 // // но это сложно инициализировать
 // // но можно запихать в макрос
 // // и это лучше чем пихать в макрос параметры
-
-
