@@ -91,7 +91,7 @@ int Check_The_Correctness_of_Register_Name(const char *first_sym_ptr);
 int Check_The_Correctness_of_Register_Name(const char *first_sym_ptr)
 {
     // Первый символ - A..Z. Второй символ = 'X'. Следующим символом после регистра должен быть ' ' или '+'.
-    if ((first_sym_ptr[1] != 'X') || (first_sym_ptr[2] != ' ' &&  first_sym_ptr[2] != '+' && first_sym_ptr[2] != '\0'))
+    if ((first_sym_ptr[1] != 'X') || (first_sym_ptr[2] != ' ' &&  first_sym_ptr[2] != '+' && first_sym_ptr[2] != '\0' && first_sym_ptr[2] != ']'))
     {
         printf("incorrect register_name. args_str=[%s", first_sym_ptr);
         abort();
@@ -180,7 +180,7 @@ int Read_File_and_Fill_Machine_Code(const char *input_file_name, const char *out
             //3-ий бит - есть ли обращение к ram
 
 
-            if (cmd_code_value & 0b10)   // может быть ошибочная комманда "POP number", остальные ситуации для pop и push корректны
+            if (cmd_code_value == 0b10)   // может быть ошибочная комманда "POP number", остальные ситуации для pop и push корректны
                 if(Check_The_Correctness_of_Pop_Args(information_bits))
                 {
                     printf(ANSI_RED "incorrect pop arguments. curant_file_line=%d" ANSI_RESET_COLOR, curant_file_line);

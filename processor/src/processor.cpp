@@ -21,16 +21,33 @@ int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int com
 int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int command)
 {
     #define CODEGEN(CMD_FLG, sign) if (command == CMD_FLG) return (first_arg sign second_arg) ? 1: 0;
-    
     CODEGEN(CMD_JA, >)
     CODEGEN(CMD_JAE, >=)
     CODEGEN(CMD_JB, <)
     CODEGEN(CMD_JBE, <=)
     CODEGEN(CMD_JE, ==)
     CODEGEN(CMD_JNE, !=)
-
     #undef CODEGEN 
+
     return 0;
+}
+
+
+
+// возвращает сумму всех аргументов данной команды
+int Sum_Command_Arguments(SPU_t *spu);
+int Sum_Command_Arguments(SPU_t *spu)
+{
+    int sum_args = 0;
+    if (spu->code[spu->ip] & 0b001) // если есть переменная = числу
+        sum_args += spu->code[spu->ip + 1];  // +1 т.к. число всегда после ячейки с информацией 
+    if (spu->code[spu->ip] & 0b010) // если есть переменная = регистру
+    {
+        int register_index = spu->code[spu->ip + 1 + (spu->code[spu->ip] & 0b001)]; // "+spu->code[spu->ip] & 0b001" нужно для того,
+        sum_args += spu->registers[register_index];                                 // чтобы если число было, то мы сдвигались на два,
+                                                                                    // в обратном случае на один.
+    }   
+    return sum_args;
 }
 
 
@@ -62,26 +79,11 @@ int Get_Arg_From_Bin_Operation(ELEMENT_TYPE first, ELEMENT_TYPE second, int comm
 int Do_SPU_Jump(SPU_t *spu);
 int Do_SPU_Jump(SPU_t *spu)
 {
-    spu->ram[1] = 1;
+    spu->ip = Sum_Command_Arguments(spu);
     return 0;
 }
 
 
-// возвращает сумму всех аргументов данной команды
-int Sum_Command_Arguments(SPU_t *spu);
-int Sum_Command_Arguments(SPU_t *spu)
-{
-    int sum_args = 0;
-    if (spu->code[spu->ip] & 0b001) // если есть переменная = числу
-        sum_args += spu->code[spu->ip + 1];  // +1 т.к. число всегда после ячейки с информацией 
-    if (spu->code[spu->ip] & 0b010) // если есть переменная = регистру
-    {
-        int register_index = spu->code[spu->ip + 1 + (spu->code[spu->ip] & 0b001)]; // "+spu->code[spu->ip] & 0b001" нужно для того,
-        sum_args += spu->registers[register_index];                                 // чтобы если число было, то мы сдвигались на два,
-                                                                                    // в обратном случае на один.
-    }   
-    return sum_args;
-}
 
 // возвращает код ошибки. функция перемещает ip в зависимости от кол-ва аргументов
 int Shift_Instruction_Pointer(SPU_t * spu);
@@ -106,8 +108,8 @@ int Do_SPU_Push(SPU_t *spu)
     
     if (spu->code[spu->ip] & 0b100)     // если есть обращение к оперативной памяти
         push_value = spu->ram[push_value];
-    else                                // иначе запись идёт в стэк
-        Stack_Push(spu->stk, push_value);
+   
+   Stack_Push(spu->stk, push_value);
         
     Shift_Instruction_Pointer(spu);
     return 0;
@@ -165,6 +167,7 @@ int Run(const char* machine_code_filename)
                 second = Stack_Pop(spu.stk);
                 first = Stack_Pop(spu.stk);
                 Stack_Push(spu.stk, Get_Arg_From_Bin_Operation(first, second, spu.code[spu.ip - 1])); //  -1 в "code[..]"" т.к. (spu.ip++) в switch
+                //Stack_Dump(spu.stk);
                 break;
 
             case CMD_OUT:

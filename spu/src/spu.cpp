@@ -29,11 +29,12 @@ void Do_SPU_Init(SPU_t *spu_ptr, const char *machine_code_filename,  const char*
             }
     )
 
-    spu_ptr->code = (ELEMENT_TYPE *) calloc(120, sizeof(ELEMENT_TYPE));
+    spu_ptr->code = (ELEMENT_TYPE *) calloc(1024, sizeof(ELEMENT_TYPE));
     spu_ptr->ip = 0;
     
     spu_ptr->size_code = 0;
     spu_ptr->size_registers = 10;
+    
     for (int i = 0; i < spu_ptr->size_registers; i++)
         spu_ptr->registers[i] = 0;
 
