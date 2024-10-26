@@ -40,10 +40,10 @@ void Do_SPU_Dump(SPU_t* spu_ptr, const char* file, const int line, const char* f
 
     printf(ANSI_YELLOW "registers[%p]:" ANSI_RESET_COLOR, spu_ptr->registers);
     
-        for (int i = 0; i < (int)spu_ptr->size_code ; i++)
-            printf(ANSI_GREEN "*[%d]=%d" ANSI_RESET_COLOR, i, spu_ptr->code[i]);      
+        for (int i = 0; i < (int)spu_ptr->size_registers ; i++)
+            printf(ANSI_GREEN "*[%d]=%d" ANSI_RESET_COLOR, i, spu_ptr->registers[i]);      
         
-        if (!spu_ptr->code) printf(ANSI_RED "Code is empty." ANSI_RESET_COLOR);
+        if (!spu_ptr->size_registers) printf(ANSI_RED "Registers is empty." ANSI_RESET_COLOR);
 
     printf(END_LINE);
 
@@ -80,8 +80,8 @@ unsigned SPU_Error(SPU_t* spu_ptr)
 {
     unsigned errors = 0;
     if (!spu_ptr) return NULL_SPU_PTR;
-    if (spu_ptr->ip <= 0) errors |= NEGATIVE_IP;
-    if (spu_ptr->size_code <= 0) errors |= NEGATIVE_SIZE_CODE;
+    if (spu_ptr->ip < 0) errors |= NEGATIVE_IP;
+    if (spu_ptr->size_code < 0) errors |= NEGATIVE_SIZE_CODE;
     if (spu_ptr->size_registers <= 0) errors |= NEGATIVE_SIZE_REGISTERS;
     if (!spu_ptr->code) errors |= NULL_CODE_PTR;
     

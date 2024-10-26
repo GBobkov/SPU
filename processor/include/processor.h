@@ -3,14 +3,10 @@
 
 #include <stdlib.h>
 
-enum RUNNER_ERROR
-{
-    NO_RUNNER_ERROR = 0,
-    DIVISION_BY_ZERO=1
-};
 
 
-RUNNER_ERROR Run(int code[], size_t size);
+
+int Run(const char *machine_code_filename);
 
 
 

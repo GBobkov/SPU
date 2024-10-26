@@ -32,7 +32,7 @@ enum SPU_ERROR_FLAG{
 
 
 void Do_SPU_Dump(SPU_t* spu_ptr, const char* file, const int line, const char* func);
-#define SPU_Dump(spu) Do_SPU_Dump(spu, __FILE__, __LINE__, __FUNCTION__)
+#define SPU_Dump(spu_ptr) Do_SPU_Dump(spu_ptr, __FILE__, __LINE__, __FUNCTION__)
 
 void SPU_Printf_Errors(int problem);
 

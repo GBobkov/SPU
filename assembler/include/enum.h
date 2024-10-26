@@ -1,10 +1,10 @@
 enum COMANDS
 {
-    // the lowest two bit contain information about variable
-    // the first lowest bit=1 if this command have
-    // some arguments if this command don't have args 0
-    // the second lowest bit=0 if this command read args from 
-    // file(only CMD_PUSH) and =1 if this command write to args
+    // the lowest two bit contain information about variable.
+    // the first lowest bit =0 if this command don't have args 0
+    //                      =1 if this command has any arguments. 
+    // the second lowest bit=0 if this command read args from file
+    //                      =1 if this command write to args  (this bit will be considered if the first lowest bit=1).
     // (only CMD_POP) other command may have 1 or 0 in the second
     // lowest bit
 
