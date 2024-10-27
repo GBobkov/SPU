@@ -90,7 +90,7 @@ int Shift_Instruction_Pointer(SPU_t * spu);
 int Shift_Instruction_Pointer(SPU_t * spu)
 {
     int delta_ip = 0;
-    // spu->code[spu->ip] - значение бита информации о параметрах 
+    // spu->code[spu->ip] - значение битов информации о параметрах 
     delta_ip += 1;  // т.к. необходимо сдвинуться вправо на 1 из-за ячейки с информацией о переменной
     delta_ip += spu->code[spu->ip] & 0b001; // сдвиг на 1 вправо если есть переменная = числу
     delta_ip += (spu->code[spu->ip] & 0b010) >> 1; // сдвиг на 1 вправо если есть переменная = регистру
