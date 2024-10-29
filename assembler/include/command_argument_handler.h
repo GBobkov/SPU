@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 // функция обрабатывает строку аргументов и переводит всё в машинный код 
-int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const char *input_file_name, int curant_file_line, LABEL* lbls);
+int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const char *input_file_name, int current_file_line, LABEL* lbls);
 
 
 // Возвращает код ошибки. Считывает аргументы строки. Заполняет биты информации.

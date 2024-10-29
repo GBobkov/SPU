@@ -1,5 +1,6 @@
 #include "scan_labels.h"
 
+#include "enum.h"
 #include "command_argument_handler.h"
 #include "colors.h"
 #include <stdio.h> 
@@ -7,6 +8,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+
+//TODO - Прототипы функций
 static const int AMOUT_OF_LABELS = 20;
 
 // Создает Пустую метку 
@@ -131,16 +134,16 @@ bool Is_Correctness_of_Variable_Name_Okey(const char* cmd)
 
 
 // функция проверит корректность имени метки. true если это имя метки, иначе false.
-bool Is_The_Label_Name(const char* cmd)
+bool Is_Label_Name(const char* cmd)
 {
+    
     char *colon_position = strchr(cmd, ':');
     if (!colon_position) // не нашлось ':'. Значит это неизвестная команда
         return false;
-    if (*(colon_position + 1) != '\0') // двоеточие не в конце имени
+    if (*(colon_position + 1) != '\0' && *(colon_position + 1) != ' ') // двоеточие не в конце имени
         return false;
     if (!Is_Correctness_of_Variable_Name_Okey(cmd))
         return false;
-
     return true; // имя метки удовлетворяет требованиям
 }
 
@@ -148,9 +151,9 @@ bool Is_The_Label_Name(const char* cmd)
 void Print_Label_Name_Errors(int errors, int input_file_line, const char* cmd);
 void Print_Label_Name_Errors(int errors, int input_file_line, const char* cmd)
 {
-    if (errors & 0b001) printf(ANSI_RED "Unsupportable arguments in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
-    if (errors & 0b010) printf(ANSI_RED "Wrong colon position in label_name in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
-    if (errors & 0b100) printf(ANSI_RED "Wrong label_name in input_file_line=%d. Arg_str=%s" ANSI_RESET_COLOR, input_file_line, cmd);
+    if (errors & NUMBER_BIT) printf(ANSI_RED "Unsupportable arguments in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
+    if (errors & REGISTER_BIT) printf(ANSI_RED "Wrong colon position in label_name in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
+    if (errors & OPEN_BRACKET_BIT) printf(ANSI_RED "Wrong label_name in input_file_line=%d. Arg_str=%s" ANSI_RESET_COLOR, input_file_line, cmd);
 }
 
 
@@ -184,6 +187,8 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
         input_file_line++; // след строка.
         instr_ptr++; // т.к. мы прочитали имя команды. Далее стоит учесть, что если прочитанная команда - метка, то "instr_ptr--", 
                     //  из-за того, что метка не занимает место в машинном коде.
+
+        
         // если комманда без аргументов, то переходим дальше.
         #define CODEGEN(name) \
             if (strcmp(cmd, #name) == 0) {continue;} \
@@ -196,8 +201,8 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
         CODEGEN(OUT)
         CODEGEN(IN)
         CODEGEN(DUMP)
-        /*else*/
-        if (strcmp(cmd, "HLT") == 0) break;
+        CODEGEN(RET)
+        CODEGEN(HLT)
         #undef CODEGEN
 
         // если PUSH, POP
@@ -210,7 +215,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                 unsigned information_bits = 0;\
                 char arg_str[50] = {};\
                 fscanf(input_file_ptr, "%s", arg_str);\
-                if (!Is_The_Label_Name(arg_str))\
+                if (!Is_Label_Name(arg_str))\
                 {\
                     if(Read_Arg_Line(arg_str, &information_bits, &unnecessary_var, &unnecessary_var))\
                     {\
@@ -220,7 +225,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                     Shift_Instruction_Pointer(&instr_ptr, information_bits);\
                 }\
                 else\
-                {\
+                { /*TODO: why?*/\
                     printf(ANSI_RED "PUSH-POP commands do not support labels. line=%d." ANSI_RESET_COLOR, input_file_line);\
                     abort();\
                 }\
@@ -241,7 +246,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                     unsigned information_bits = 0;\
                     char arg_str[50] = {};\
                     fscanf(input_file_ptr, "%s", arg_str);\
-                    if (!Is_The_Label_Name(arg_str))\
+                    if (!Is_Label_Name(arg_str))\
                     {\
                         if(Read_Arg_Line(arg_str, &information_bits, &unnecessary_var, &unnecessary_var))\
                         {\
@@ -265,14 +270,33 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
             CODEGEN(JE)
             CODEGEN(JNE)
             CODEGEN(JMP)
+            CODEGEN(CALL)
             /*else*/
             {
                 #undef CODEGEN
 
+                if (strcmp(cmd, "CALL") == 0)
+                {
+                    char arg_str[50] = {};
+                    fscanf(input_file_ptr, "%s", arg_str);
+                    if (!Is_Label_Name(arg_str))
+                    {
+                        printf(ANSI_RED "CALL accepts only labels. line=%d. arg_str=%s" ANSI_RESET_COLOR, input_file_line, arg_str);
+                        abort();
+                    }
+                    else
+                    {
+                        Shift_Instruction_Pointer(&instr_ptr, 0b001); // т.к. комманда call имеет всегда только один аргумент - номер code_ip.
+                        Write_New_Label_to_Arr(labels, arg_str, -1, input_file_line);
+                    }
+                    continue;
+                }
+
+
                 // Т.О данная комманда не является стандартной, а значит это или метка, или ошибочная комманда.
 
                 // Проверим, что это метка. Если это не так, то прерываем программу.
-                if (!Is_The_Label_Name(cmd))
+                if (!Is_Label_Name(cmd))
                 {
                     printf(ANSI_RED "Line=%d. Unsuportable command=%s" ANSI_RESET_COLOR, input_file_line, cmd);
                     abort();

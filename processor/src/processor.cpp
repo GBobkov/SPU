@@ -17,8 +17,7 @@
 
 
 // Компаратор разбирает разные варианты комманд. 0 если комманда не найдена.
-int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int command);
-int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int command)
+static int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int command)
 {
     #define CODEGEN(CMD_FLG, sign) if (command == CMD_FLG) return (first_arg sign second_arg) ? 1: 0;
     CODEGEN(CMD_JA, >)
@@ -35,17 +34,17 @@ int Commands_Comparator(ELEMENT_TYPE first_arg, ELEMENT_TYPE second_arg, int com
 
 
 // возвращает сумму всех аргументов данной команды
-int Sum_Command_Arguments(SPU_t *spu);
-int Sum_Command_Arguments(SPU_t *spu)
+static int Sum_Command_Arguments(SPU_t *spu)
 {
     int sum_args = 0;
-    if (spu->code[spu->ip] & 0b001) // если есть переменная = числу
+    if (spu->code[spu->ip] & NUMBER_BIT) // если есть переменная = числу
         sum_args += spu->code[spu->ip + 1];  // +1 т.к. число всегда после ячейки с информацией 
-    if (spu->code[spu->ip] & 0b010) // если есть переменная = регистру
+    if (spu->code[spu->ip] & REGISTER_BIT) // если есть переменная = регистру
     {
-        int register_index = spu->code[spu->ip + 1 + (spu->code[spu->ip] & 0b001)]; // "+spu->code[spu->ip] & 0b001" нужно для того,
-        sum_args += spu->registers[register_index];                                 // чтобы если число было, то мы сдвигались на два,
-                                                                                    // в обратном случае на один.
+        int register_index = spu->code[spu->ip + 1 + (spu->code[spu->ip] & NUMBER_BIT)];
+        int sign = (register_index >= 0) ? 1: -1;                                           // "+spu->code[spu->ip] & NUMBER_BIT" нужно для того,
+        sum_args += spu->registers[abs(register_index)] * sign;                             // чтобы если число было, то мы сдвигались на два,
+                                                                                            // в обратном случае на один.
     }   
     return sum_args;
 }
@@ -53,8 +52,7 @@ int Sum_Command_Arguments(SPU_t *spu)
 
 
 // Функция возвращает результат бинарной операцией. 0 если такая команда не определяет операцию.
-int Get_Arg_From_Bin_Operation(ELEMENT_TYPE first, ELEMENT_TYPE second, int command);
-int Get_Arg_From_Bin_Operation(ELEMENT_TYPE first, ELEMENT_TYPE second, int command)
+static int Get_Arg_From_Bin_Operation(ELEMENT_TYPE first, ELEMENT_TYPE second, int command)
 {
     #define CODEGEN(CMD_FLG, sign) if (command == CMD_FLG) return first sign second;
     CODEGEN(CMD_ADD, +)
@@ -76,8 +74,7 @@ int Get_Arg_From_Bin_Operation(ELEMENT_TYPE first, ELEMENT_TYPE second, int comm
 
 
 // Возвращает код ошибки. Рассматривает все ситуации с аргуметами
-int Do_SPU_Jump(SPU_t *spu);
-int Do_SPU_Jump(SPU_t *spu)
+static int Do_SPU_Jump(SPU_t *spu)
 {
     spu->ip = Sum_Command_Arguments(spu);
     return 0;
@@ -86,14 +83,13 @@ int Do_SPU_Jump(SPU_t *spu)
 
 
 // возвращает код ошибки. функция перемещает ip в зависимости от кол-ва аргументов
-int Shift_Instruction_Pointer(SPU_t * spu);
-int Shift_Instruction_Pointer(SPU_t * spu)
+static int Shift_Instruction_Pointer(SPU_t * spu)
 {
     int delta_ip = 0;
     // spu->code[spu->ip] - значение битов информации о параметрах 
     delta_ip += 1;  // т.к. необходимо сдвинуться вправо на 1 из-за ячейки с информацией о переменной
-    delta_ip += spu->code[spu->ip] & 0b001; // сдвиг на 1 вправо если есть переменная = числу
-    delta_ip += (spu->code[spu->ip] & 0b010) >> 1; // сдвиг на 1 вправо если есть переменная = регистру
+    delta_ip += spu->code[spu->ip] & NUMBER_BIT; // сдвиг на 1 вправо если есть переменная = числу
+    delta_ip += (spu->code[spu->ip] & REGISTER_BIT) >> 1; // сдвиг на 1 вправо если есть переменная = регистру
 
     spu->ip += delta_ip;
     return 0;
@@ -101,15 +97,21 @@ int Shift_Instruction_Pointer(SPU_t * spu)
 
 
 // Возвращает код ошибки. Функция выполняет команду PUSH
-int Do_SPU_Push(SPU_t *spu);
-int Do_SPU_Push(SPU_t *spu)
+static int Do_SPU_Push(SPU_t *spu)
 {
-    ELEMENT_TYPE push_value = Sum_Command_Arguments(spu);
+    ELEMENT_TYPE push_value = Sum_Command_Arguments(spu); // TODO: make that if part of Sum_CommandArguments
     
-    if (spu->code[spu->ip] & 0b100)     // если есть обращение к оперативной памяти
-        push_value = spu->ram[push_value];
+    if (spu->code[spu->ip] & OPEN_BRACKET_BIT)     // если есть обращение к оперативной памяти
+        {
+            if (push_value < 0)
+            {
+                printf("PUSH VALUE < 0\n");
+                abort();
+            }
+            push_value = spu->ram[push_value];
+        }
    
-   Stack_Push(spu->stk, push_value);
+    Stack_Push(spu->stk, push_value);
         
     Shift_Instruction_Pointer(spu);
     return 0;
@@ -117,10 +119,10 @@ int Do_SPU_Push(SPU_t *spu)
 
 
 // Возвращает код ошибки. Функция выполняет команду POP
-int Do_SPU_Pop(SPU_t *spu);
-int Do_SPU_Pop(SPU_t *spu)
+static int Do_SPU_Pop(SPU_t *spu)
 {
-    
+    // TODO: make separate commands for arg read & write
+    // Команда записи аргументов. Команда чтения аргументов.
     if (spu->code[spu->ip] & 0b100)  // если есть обращение к оперативной памяти
     {
         int ram_index = Sum_Command_Arguments(spu);
@@ -137,16 +139,43 @@ int Do_SPU_Pop(SPU_t *spu)
     }
     
     Shift_Instruction_Pointer(spu);
+
+    return 0;
+}
+
+
+// переход на код с функцией. пополняет стэк вызовов функций. возвращает код ошибки.
+static int Do_SPU_Call(SPU_t *spu)
+{
+    spu->ip++; // пропускаем ячейку с информацией о переменных. т.к. переменная одна - номер ip, на который делается jump.
+    Stack_Push(spu->func_call_stk, spu->ip + 1); // вызов функции происходит по spu->ip, вернуться нужно на след. ячейку.
+    spu->ip = spu->code[spu->ip]; // прыжок на функцию
+
+    return 0;
+}
+
+
+// возвращается на последний вызов из spu->func_call_stk. возвращает код ошибки.
+static int Do_SPU_Ret(SPU_t *spu)
+{
+    int new_ip = Stack_Pop(spu->func_call_stk);
+    if (new_ip == POIZON_VALUE)
+    {
+        printf(ANSI_RED "func_call_stk is empty. Somewhere surplus \"RET\"." ANSI_RESET_COLOR);
+        abort();
+    }
+    spu->ip = new_ip;
+
     return 0;
 }
 
 
 
+// исполняет машинный код.
 int Run(const char* machine_code_filename)
 {
     
     SPU_t spu = {};
-    
     SPU_Init(spu, machine_code_filename);
     SPU_Assert(&spu);
 
@@ -156,7 +185,6 @@ int Run(const char* machine_code_filename)
     
     while (running)
     {
-        
         if (spu.ip >= spu.size_code) break;  // если массив с машинным кодом закончился
         switch (spu.code[spu.ip++])
         {
@@ -200,6 +228,14 @@ int Run(const char* machine_code_filename)
                     Do_SPU_Jump(&spu);
                     break;
 
+            case CMD_CALL:
+                    Do_SPU_Call(&spu);
+                    break;
+            
+            case CMD_RET:
+                    Do_SPU_Ret(&spu);
+                    break;
+
             case CMD_JA:
             case CMD_JAE:
             case CMD_JB:
@@ -211,7 +247,6 @@ int Run(const char* machine_code_filename)
                     if (Commands_Comparator(first, second, spu.code[spu.ip - 1])) //  -1 в "code[..]"" т.к. (spu.ip++) в switch
                         Do_SPU_Jump(&spu);
                     break;
-                
         
             default:
                     printf(ANSI_RED "UNKNOWN COMMAND_CODE=%d in %s:%d(%s)" ANSI_RESET_COLOR, spu.code[spu.ip], __FILE__, __LINE__, __FUNCTION__);

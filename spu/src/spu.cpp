@@ -37,9 +37,13 @@ void Do_SPU_Init(SPU_t *spu_ptr, const char *machine_code_filename,  const char*
     
     for (int i = 0; i < spu_ptr->size_registers; i++)
         spu_ptr->registers[i] = 0;
-
+    // FIXME: demagicify!
     Stack_Init(spu_ptr->stk, 16);
+    
+    Stack_Init(spu_ptr->func_call_stk, 16);
+    
     Read_SPU_Data_From_File(spu_ptr, machine_code_filename);
+
 }
 
 
@@ -55,13 +59,10 @@ int Read_SPU_Data_From_File(SPU_t* spu_ptr, const char* file_name)
 {
     SPU_Assert(spu_ptr);
     FILE* input_file_ptr = fopen(file_name, "r");
-    
     ELEMENT_TYPE value = 0;
-    
     while (fscanf(input_file_ptr, "%d", &value) > 0)
         spu_ptr->code[spu_ptr->size_code++] = value;
 
-    
     fclose(input_file_ptr);
     return spu_ptr->size_code;
 }

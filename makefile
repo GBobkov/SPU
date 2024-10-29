@@ -31,7 +31,7 @@ main.exe : $(DIROBJFILES)
 
 
 obj/%.o : %.cpp
-	g++ $(FLAGS) $< -c  -o $@ -I processor/include -I spu/include -I my_stack/include -I assembler/include
+	g++ $(FLAGS) $< -c  -o $@ -I processor/include -I spu/include -I my_stack/include -I assembler/include -I .
 
 
 

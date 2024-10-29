@@ -22,7 +22,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name);
 
 
 // функция проверит корректность имени метки. true если это имя метки, иначе false.
-bool Is_The_Label_Name(const char* cmd);
+bool Is_Label_Name(const char* cmd);
 
 
 #endif
