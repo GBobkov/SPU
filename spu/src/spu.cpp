@@ -2,6 +2,7 @@
 #include "colors.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 int Read_SPU_Data_From_File(SPU_t* spu_ptr, const char* file_name);
 
@@ -29,18 +30,17 @@ void Do_SPU_Init(SPU_t *spu_ptr, const char *machine_code_filename,  const char*
             }
     )
 
-    spu_ptr->code = (ELEMENT_TYPE *) calloc(1024, sizeof(ELEMENT_TYPE));
+    spu_ptr->code = (ELEMENT_TYPE *) calloc(CODE_SIZE, sizeof(ELEMENT_TYPE));
     spu_ptr->ip = 0;
     
-    spu_ptr->size_code = 0;
-    spu_ptr->size_registers = 10;
+    spu_ptr->size_code = CODE_SIZE;
+    spu_ptr->size_registers = REGS_SIZE;
     
     for (int i = 0; i < spu_ptr->size_registers; i++)
         spu_ptr->registers[i] = 0;
-    // FIXME: demagicify!
-    Stack_Init(spu_ptr->stk, 16);
-    
-    Stack_Init(spu_ptr->func_call_stk, 16);
+
+    Stack_Init(spu_ptr->stk, STK_SIZE);
+    Stack_Init(spu_ptr->func_call_stk, STK_SIZE);
     
     Read_SPU_Data_From_File(spu_ptr, machine_code_filename);
 
@@ -58,11 +58,9 @@ void Do_SPU_Destroy(SPU_t* spu_ptr)
 int Read_SPU_Data_From_File(SPU_t* spu_ptr, const char* file_name)
 {
     SPU_Assert(spu_ptr);
-    FILE* input_file_ptr = fopen(file_name, "r");
-    ELEMENT_TYPE value = 0;
-    while (fscanf(input_file_ptr, "%d", &value) > 0)
-        spu_ptr->code[spu_ptr->size_code++] = value;
-
+    FILE* input_file_ptr = fopen(file_name, "rb");
+    assert(input_file_ptr);
+    fread(spu_ptr->code, sizeof(spu_ptr->code[0]), spu_ptr->size_code, input_file_ptr);
     fclose(input_file_ptr);
     return spu_ptr->size_code;
 }

@@ -4,7 +4,6 @@
 #include "scan_labels.h"
 #include "enum.h"
 #include "colors.h"
-#include "my_stack.h"
 #include <ctype.h>
 #include <assert.h>
 #include <stdio.h>
@@ -12,33 +11,32 @@
 #include <stdlib.h>
 
 
-#define BIN_OUTPUT_MODE_0
-#ifdef BIN_OUTPUT_MODE_0
-#define FPRINTF_NUMBER_IN_OUTPUT(number) fprintf(output_file_ptr, "%d\n", number);
-#elif BIN_OUTPUT_MODE_1
+// #define BIN_OUTPUT_MODE_0
+// #ifdef BIN_OUTPUT_MODE_0
+// #define FPRINTF_NUMBER_IN_OUTPUT(number) fprintf(output_file_ptr, "%d\n", number);
+// #elif BIN_OUTPUT_MODE_1
 
-// функция переводит число в двоичный вид в строке 
-static char *Int_to_Bin(int number, char* buffer, int buf_size)
-{
-    buffer += (buf_size - 1);
+// // функция переводит число в двоичный вид в строке 
+// static char *Int_to_Bin(int number, char* buffer, int buf_size)
+// {
+//     buffer += (buf_size - 1);
     
-    for (int i = 7; i >= 0; i--) {
-        *buffer-- = (number & 1) + '0';
+//     for (int i = 7; i >= 0; i--) {
+//         *buffer-- = (number & 1) + '0';
 
-        number >>= 1;
-    }
+//         number >>= 1;
+//     }
 
-    return buffer;
-}
-
-#define FPRINTF_NUMBER_IN_OUTPUT(number) const int BUF_SIZE = 8;\
+//     return buffer;
+// }
+/*#define FPRINTF_NUMBER_IN_OUTPUT(number) const int BUF_SIZE = 8;\
         {\
             char buffer[BUF_SIZE];\
             buffer[BUF_SIZE - 1] = '\0';\
             Int_to_Bin(number, buffer, BUF_SIZE - 1);\
             fprintf(output_file_ptr, "%s\n", buffer);
         }
-#endif
+#endif*/
 
 
 static const int COMMAND_GETS_ARGS = 1;
@@ -56,12 +54,21 @@ static int Check_Pop_Args(int info_bits)
 
 
 
+static int Write_to_File(FILE *output, STACK* stk)
+{
+    fwrite(stk->data, sizeof(stk->data[0]), stk->size, output);
+    return 0;
+}
+
+
 
 // Возвращает код ошибки. Функция обрабатывает файл с кодом.
 static int Read_File_and_Fill_Machine_Code(const char *input_file_name, const char *output_file_name, LABEL* lbls)
 {
     FILE* input_file_ptr = fopen(input_file_name, "r");
-    FILE* output_file_ptr = fopen(output_file_name, "w");
+    FILE* output_file_ptr = fopen(output_file_name, "wb");
+    STACK commands_stack = {};
+    Stack_Init(commands_stack, 16);
 
     assert(input_file_ptr);
     assert(output_file_ptr);
@@ -108,11 +115,14 @@ static int Read_File_and_Fill_Machine_Code(const char *input_file_name, const ch
         #undef CODEGEN
 
         
-        FPRINTF_NUMBER_IN_OUTPUT(cmd_code_value)
-
+        
+        //FPRINTF_NUMBER_IN_OUTPUT(cmd_code_value)
+        Stack_Push(commands_stack, cmd_code_value);
+        
         if (cmd_code_value & COMMAND_GETS_ARGS)  // если комманда принимает аргументы, то нужно записать в машинный код её параметры
         {
-            int info_bits = Write_Instruction_Arg(input_file_ptr, output_file_ptr, input_file_name, current_file_line, lbls);
+
+            int info_bits = Write_Instruction_Arg(input_file_ptr, &commands_stack, input_file_name, current_file_line, lbls);
             //1-ый бит - есть ли чисто
             //2-ой бит - есть ли регистр
             //3-ий бит - есть ли обращение к ram
@@ -135,7 +145,9 @@ static int Read_File_and_Fill_Machine_Code(const char *input_file_name, const ch
         abort();      
     }
 
-
+    Write_to_File(output_file_ptr, &commands_stack);
+    
+    Destroy_Labels_Arr(lbls);
     fclose(input_file_ptr);
     fclose(output_file_ptr);
     return 0;

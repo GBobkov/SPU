@@ -11,7 +11,7 @@ struct LABEL
 
 // Создаёт массив меток. Возвращает указатель на массив меток.
 LABEL* Create_Labels_Arr(void);
-
+int Destroy_Labels_Arr(LABEL *lbls);
 
 // Ищет строку подстановки через имя метки.
 int Search_Index_Code_By_Label(LABEL* lbls, const char* lbl_name);

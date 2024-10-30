@@ -178,7 +178,7 @@ int Run(const char* machine_code_filename)
     SPU_t spu = {};
     SPU_Init(spu, machine_code_filename);
     SPU_Assert(&spu);
-
+    
     bool running = true;
     ELEMENT_TYPE second = 0;
     ELEMENT_TYPE first = 0;

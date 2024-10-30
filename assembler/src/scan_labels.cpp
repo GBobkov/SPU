@@ -8,13 +8,10 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-
-//TODO - Прототипы функций
 static const int AMOUT_OF_LABELS = 20;
 
 // Создает Пустую метку 
-LABEL Create_Label(void);
-LABEL Create_Label(void)
+static LABEL Create_Label(void)
 {
     LABEL lbl = {};
     memset((void *) lbl.label_name, 0, 16);
@@ -37,7 +34,6 @@ LABEL* Create_Labels_Arr(void)
 
 
 // функиця уничтожает массив
-int Destroy_Labels_Arr(LABEL *lbls);
 int Destroy_Labels_Arr(LABEL *lbls)
 {
     free(lbls);
@@ -64,8 +60,7 @@ int Search_Index_Code_By_Label(LABEL* lbls, const char* lbl_name)
 
 
 // Функция записывает метку и индекс её направления в массив меток. Возвращает код ошибки.
-int Write_New_Label_to_Arr(LABEL* lbls, const char* lbl_name, int code_ip, int input_file_line);
-int Write_New_Label_to_Arr(LABEL* lbls, const char* lbl_name, int code_ip, int input_file_line)
+static int Write_New_Label_to_Arr(LABEL* lbls, const char* lbl_name, int code_ip, int input_file_line)
 {
     for (int i = 0; i < AMOUT_OF_LABELS; i++)
     {   
@@ -104,22 +99,20 @@ int Write_New_Label_to_Arr(LABEL* lbls, const char* lbl_name, int code_ip, int i
 
 
 // возвращает код ошибки. функция перемещает instr_ptr в зависимости от кол-ва аргументов
-int Shift_Instruction_Pointer(int *instr_ptr, int information_bits);
-int Shift_Instruction_Pointer(int *instr_ptr, int information_bits)
+static int Shift_Instruction_Pointer(int *instr_ptr, int information_bits)
 {
     int delta_ip = 0;
     // information_bits - значение битов информации о параметрах 
     delta_ip += 1;  // т.к. необходимо сдвинуться вправо на 1 из-за ячейки с информацией о переменной
-    delta_ip += information_bits & 0b001; // сдвиг на 1 вправо если есть переменная = числу
-    delta_ip += (information_bits & 0b010) >> 1; // сдвиг на 1 вправо если есть переменная = регистру
+    delta_ip += information_bits & NUMBER_BIT; // сдвиг на 1 вправо если есть переменная = числу
+    delta_ip += (information_bits & REGISTER_BIT) >> 1; // сдвиг на 1 вправо если есть переменная = регистру
 
     *instr_ptr += delta_ip;
     return 0;
 }
 
 // Проверка на то, что имя метки только из букв
-bool Is_Correctness_of_Variable_Name_Okey(const char* cmd);
-bool Is_Correctness_of_Variable_Name_Okey(const char* cmd)
+static bool Is_Correctness_of_Variable_Name_Okey(const char* cmd)
 {
     bool okey = isalpha(cmd[0]);
     int pointer = 1;
@@ -148,20 +141,18 @@ bool Is_Label_Name(const char* cmd)
 }
 
 
-void Print_Label_Name_Errors(int errors, int input_file_line, const char* cmd);
-void Print_Label_Name_Errors(int errors, int input_file_line, const char* cmd)
-{
-    if (errors & NUMBER_BIT) printf(ANSI_RED "Unsupportable arguments in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
-    if (errors & REGISTER_BIT) printf(ANSI_RED "Wrong colon position in label_name in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
-    if (errors & OPEN_BRACKET_BIT) printf(ANSI_RED "Wrong label_name in input_file_line=%d. Arg_str=%s" ANSI_RESET_COLOR, input_file_line, cmd);
-}
+// static void Print_Label_Name_Errors(int errors, int input_file_line, const char* cmd)
+// {
+//     if (errors & NUMBER_BIT) printf(ANSI_RED "Unsupportable arguments in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
+//     if (errors & REGISTER_BIT) printf(ANSI_RED "Wrong colon position in label_name in input_file_line=%d. Arg_str=%s\n", input_file_line, cmd);
+//     if (errors & OPEN_BRACKET_BIT) printf(ANSI_RED "Wrong label_name in input_file_line=%d. Arg_str=%s" ANSI_RESET_COLOR, input_file_line, cmd);
+// }
 
 
 
 // Проверяет, все ли метки объявлены(ситуация когда метка встретилась в аргументах, но не встретилась в объявлении).
 // Возвращает код ошибки.
-bool Is_Lables_Arr_Okay(LABEL* lbls);
-bool Is_Lables_Arr_Okay(LABEL* lbls)
+static bool Is_Lables_Arr_Okay(LABEL* lbls)
 {
     bool okey = true;
     for (int i = 0; i < AMOUT_OF_LABELS && lbls[i].label_name[0] != '\0'; i++)
@@ -215,20 +206,12 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                 unsigned information_bits = 0;\
                 char arg_str[50] = {};\
                 fscanf(input_file_ptr, "%s", arg_str);\
-                if (!Is_Label_Name(arg_str))\
+                if(Read_Arg_Line(arg_str, &information_bits, &unnecessary_var, &unnecessary_var))\
                 {\
-                    if(Read_Arg_Line(arg_str, &information_bits, &unnecessary_var, &unnecessary_var))\
-                    {\
-                        printf(ANSI_RED "Wrong arguments in input_file_line=%d. arg_str=%s" ANSI_RESET_COLOR, input_file_line, arg_str);\
-                        abort();\
-                    }\
-                    Shift_Instruction_Pointer(&instr_ptr, information_bits);\
-                }\
-                else\
-                { /*TODO: why?*/\
-                    printf(ANSI_RED "PUSH-POP commands do not support labels. line=%d." ANSI_RESET_COLOR, input_file_line);\
+                    printf(ANSI_RED "Wrong arguments in input_file_line=%d. arg_str=%s" ANSI_RESET_COLOR, input_file_line, arg_str);\
                     abort();\
                 }\
+                Shift_Instruction_Pointer(&instr_ptr, information_bits);\
             }\
             else
 
@@ -257,7 +240,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                     }\
                     else\
                     {\
-                        Shift_Instruction_Pointer(&instr_ptr, 0b001);\
+                        Shift_Instruction_Pointer(&instr_ptr, NUMBER_BIT);\
                         Write_New_Label_to_Arr(labels, arg_str, -1, input_file_line);\
                     }\
                 }\
@@ -286,7 +269,7 @@ int Scan_File_Search_Labels(LABEL* labels, const char* input_file_name)
                     }
                     else
                     {
-                        Shift_Instruction_Pointer(&instr_ptr, 0b001); // т.к. комманда call имеет всегда только один аргумент - номер code_ip.
+                        Shift_Instruction_Pointer(&instr_ptr, NUMBER_BIT); // т.к. комманда call имеет всегда только один аргумент - номер code_ip.
                         Write_New_Label_to_Arr(labels, arg_str, -1, input_file_line);
                     }
                     continue;

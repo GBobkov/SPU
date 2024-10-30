@@ -170,10 +170,9 @@ int Read_Arg_Line(const char* args_str, unsigned *str_arg_info_bits, int* num_ar
 
 
 // функция проверяет строку аргументов и переводит всё в машинный код. Возвращает  str_arg_info_bits.
-int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const char *input_file_name, int current_file_line, LABEL* lbls)
+int Write_Instruction_Arg(FILE* input_file_ptr, STACK* commands_stack_ptr, const char *input_file_name, int current_file_line, LABEL* lbls)
 {   
     assert(input_file_ptr); 
-    assert(output_file_ptr);
 
     char args_str[64] = {};
     if (fscanf(input_file_ptr, "%s", args_str) <= 0)
@@ -217,11 +216,11 @@ int Write_Instruction_Arg(FILE* input_file_ptr, FILE* output_file_ptr, const cha
     //3-ий бит - есть ли обращение к ram
 
     // записываем в машинный код информацию об аргументах
-    FPRINTF_NUMBER_IN_OUTPUT(str_arg_info_bits)  
+    Stack_Push(*commands_stack_ptr, str_arg_info_bits);
     if (str_arg_info_bits & NUMBER_BIT)   //1-ый бит - есть ли чисто
-        FPRINTF_NUMBER_IN_OUTPUT(num_arg)
+        Stack_Push(*commands_stack_ptr, num_arg);
     if (str_arg_info_bits & REGISTER_BIT)   //2-ой бит - есть ли регистр
-        FPRINTF_NUMBER_IN_OUTPUT(reg_arg)
+        Stack_Push(*commands_stack_ptr, reg_arg);
 
     return str_arg_info_bits;
 }

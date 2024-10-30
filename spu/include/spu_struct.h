@@ -4,15 +4,17 @@
 #include "my_stack.h"
 
 
-const int RAM_SIZE = 128;
-const int REGISTERS_NUMBER = 10;
+static const int REGS_SIZE = 10;
+static const int STK_SIZE = 16;
+static const int RAM_SIZE = 128;
+static const int CODE_SIZE = 128;
 
 struct SPU_STRUCT
 {
     ELEMENT_TYPE *code;
     int size_code;
     int ip;
-    ELEMENT_TYPE registers[REGISTERS_NUMBER];
+    ELEMENT_TYPE registers[REGS_SIZE];
     int size_registers;
     STACK stk;
     STACK func_call_stk;
